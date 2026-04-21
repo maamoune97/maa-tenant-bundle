@@ -1,0 +1,82 @@
+services:
+    _defaults:
+        autowire: false
+        autoconfigure: false
+        public: false
+
+    # ── Context ──────────────────────────────────────────────────────────────
+    Maa\TenantBundle\Context\TenantContext:
+        public: true
+
+    Maa\TenantBundle\Context\TenantContextInterface:
+        alias: Maa\TenantBundle\Context\TenantContext
+
+    # ── Resolvers ─────────────────────────────────────────────────────────────
+    Maa\TenantBundle\Resolver\ChainTenantResolver:
+        arguments:
+            $resolvers: []   # populated by TenantResolverPass
+
+    Maa\TenantBundle\Resolver\TenantResolverInterface:
+        alias: Maa\TenantBundle\Resolver\ChainTenantResolver
+
+    Maa\TenantBundle\Resolver\Http\SubdomainTenantResolver:
+        tags:
+            - { name: maa_tenant.http_resolver, priority: 0 }
+
+    # Not tagged by default; apps opt in via their own service config.
+    Maa\TenantBundle\Resolver\Http\HeaderTenantResolver: ~
+
+    # ── DBAL middleware ───────────────────────────────────────────────────────
+    maa_tenant.dbal.middleware:
+        class: Maa\TenantBundle\DBAL\TenantConnectionMiddleware
+        arguments:
+            $context: '@Maa\TenantBundle\Context\TenantContextInterface'
+            $dbPrefix: '%maa_tenant.tenant_db_prefix%'
+
+    # ── Repository ────────────────────────────────────────────────────────────
+    # Wired explicitly to the registry EM — no ManagerRegistry needed, and the
+    # class can be instantiated directly in integration tests (new TenantRepository($em)).
+    Maa\TenantBundle\Repository\TenantRepository:
+        arguments:
+            $em: '@doctrine.orm.maa_tenant_entity_manager'
+
+    # ── Event subscribers ─────────────────────────────────────────────────────
+    Maa\TenantBundle\EventSubscriber\TenantRequestSubscriber:
+        arguments:
+            $resolver:    '@Maa\TenantBundle\Resolver\TenantResolverInterface'
+            $repository:  '@Maa\TenantBundle\Repository\TenantRepository'
+            $context:     '@Maa\TenantBundle\Context\TenantContextInterface'
+            $required:    '%maa_tenant.http.required%'
+        tags:
+            - { name: kernel.event_subscriber }
+
+    Maa\TenantBundle\EventSubscriber\TenantConsoleSubscriber:
+        arguments:
+            $context:        '@Maa\TenantBundle\Context\TenantContextInterface'
+            $repository:     '@Maa\TenantBundle\Repository\TenantRepository'
+            $tenantCommands: '%maa_tenant.cli.tenant_commands%'
+        tags:
+            - { name: kernel.event_subscriber }
+
+    # ── Commands ──────────────────────────────────────────────────────────────
+    Maa\TenantBundle\Command\TenantSetupCommand:
+        arguments:
+            $registryEm: '@doctrine.orm.maa_tenant_entity_manager'
+        tags:
+            - { name: console.command }
+
+    Maa\TenantBundle\Command\TenantCreateCommand:
+        arguments:
+            $registryEm:        '@doctrine.orm.maa_tenant_entity_manager'
+            $tenantRepository:  '@Maa\TenantBundle\Repository\TenantRepository'
+            $registryConnection: '@doctrine.dbal.maa_tenant_registry_connection'
+            $dbPrefix:          '%maa_tenant.tenant_db_prefix%'
+        tags:
+            - { name: console.command }
+
+    Maa\TenantBundle\Command\TenantDeleteCommand:
+        arguments:
+            $registryEm:       '@doctrine.orm.maa_tenant_entity_manager'
+            $tenantRepository: '@Maa\TenantBundle\Repository\TenantRepository'
+        tags:
+            - { name: console.command }

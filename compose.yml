@@ -1,0 +1,31 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    volumes:
+      - .:/app
+    environment:
+      TENANT_REGISTRY_DATABASE_URL: "postgresql://tenant_user:secret@postgres:5432/tenant_registry"
+      DATABASE_URL: "postgresql://tenant_user:secret@postgres:5432/placeholder"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: tenant_user
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: tenant_registry
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tenant_user -d tenant_registry"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pg_data:

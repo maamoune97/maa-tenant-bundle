@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         failOnRisky="true"
+         failOnWarning="true">
+
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+
+    <php>
+        <!-- Read from environment; docker-compose injects these automatically. -->
+        <env name="TENANT_REGISTRY_DATABASE_URL"
+             value="postgresql://tenant_user:secret@postgres:5432/tenant_registry"/>
+        <env name="DATABASE_URL"
+             value="postgresql://tenant_user:secret@postgres:5432/placeholder"/>
+    </php>
+
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
+</phpunit>

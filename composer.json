@@ -1,0 +1,50 @@
+{
+    "name": "maa/tenant-bundle",
+    "description": "Symfony bundle for transparent multi-tenancy with per-tenant databases",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "keywords": ["symfony", "bundle", "multi-tenancy", "doctrine", "database", "saas"],
+    "authors": [
+        {
+            "name": "Hassane Maamoune",
+            "email": "maamoune97bv@gmail.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/maamoune97/tenant-bundle/issues",
+        "source": "https://github.com/maamoune97/tenant-bundle"
+    },
+    "require": {
+        "php": ">=8.2",
+        "symfony/framework-bundle": "^6.4|^7.0",
+        "symfony/console": "^6.4|^7.0",
+        "symfony/uid": "^6.4|^7.0",
+        "doctrine/orm": "^2.17|^3.0",
+        "doctrine/dbal": "^3.7|^4.0",
+        "doctrine/doctrine-bundle": "^2.11"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0",
+        "symfony/http-foundation": "^6.4|^7.0",
+        "phpstan/phpstan": "^1.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "Maa\\TenantBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Maa\\TenantBundle\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "thanks": {
+            "name": "maa/tenant-bundle",
+            "url": "https://github.com/maa/tenant-bundle"
+        }
+    }
+}
