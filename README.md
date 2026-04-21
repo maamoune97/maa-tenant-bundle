@@ -86,6 +86,28 @@ Maa\TenantBundle\Resolver\Http\HeaderTenantResolver:
 
 `X-Tenant-Code: acme` → code `acme`
 
+### HTTP — query parameter (local dev, opt-in)
+
+For fullstack Symfony apps in local development where subdomains are not available,
+enable `QueryParamTenantResolver` only in the `dev` environment:
+
+```yaml
+# config/services_dev.yaml
+Maa\TenantBundle\Resolver\Http\QueryParamTenantResolver:
+    tags:
+        - { name: maa_tenant.http_resolver, priority: 20 }
+```
+
+You can then navigate directly to any page with `?_tenant=acme` in the URL:
+
+```
+http://localhost:8000/dashboard?_tenant=acme
+http://localhost:8000/invoices?_tenant=beta
+```
+
+The query parameter takes priority over the subdomain in dev, and is completely
+absent in production (never registered as a resolver).
+
 ### HTTP — custom resolver
 
 Implement `TenantResolverInterface` and tag your service:

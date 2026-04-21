@@ -19,6 +19,10 @@ final class MaaTenantExtension extends Extension implements PrependExtensionInte
         $loader = new YamlFileLoader($container, new FileLocator(\dirname(__DIR__, 2) . '/config'));
         $loader->load('services.yaml');
 
+        if ($container->getParameter('kernel.environment') === 'dev') {
+            $loader->load('services_dev.yaml');
+        }
+
         $container->setParameter('maa_tenant.registry_url', $config['registry_url']);
         $container->setParameter('maa_tenant.tenant_connection', $config['tenant_connection']);
         $container->setParameter('maa_tenant.tenant_db_prefix', $config['tenant_db_prefix']);

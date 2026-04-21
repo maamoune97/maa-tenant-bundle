@@ -26,6 +26,10 @@ services:
     # Not tagged by default; apps opt in via their own service config.
     Maa\TenantBundle\Resolver\Http\HeaderTenantResolver: ~
 
+    # Not tagged by default; intended for local dev (fullstack apps without subdomains).
+    # Opt in via config/services_dev.yaml (see README).
+    Maa\TenantBundle\Resolver\Http\QueryParamTenantResolver: ~
+
     # ── DBAL middleware ───────────────────────────────────────────────────────
     maa_tenant.dbal.middleware:
         class: Maa\TenantBundle\DBAL\TenantConnectionMiddleware
