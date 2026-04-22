@@ -1,4 +1,4 @@
 services:
-    Maa\TenantBundle\Resolver\Http\QueryParamTenantResolver:
+    Maa\TenantBundle\Resolver\Http\SessionQueryParamTenantResolver:
         tags:
             - { name: maa_tenant.http_resolver, priority: 20 }

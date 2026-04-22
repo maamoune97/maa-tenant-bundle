@@ -7,10 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-04-22
+
+### Added
+- `SessionQueryParamTenantResolver` — dev resolver that stores the tenant in the session so
+  navigation works without repeating `?_tenant=` on every request. Replaces the stateless
+  `QueryParamTenantResolver` in `services_dev.yaml`.
+
+### Fixed
+- **`maa:tenant:setup --force` was silently dropping unrelated tables.** Doctrine ORM 3.x
+  removed the `$saveMode` parameter from `SchemaTool::updateSchema()`, making it always
+  destructive. The command now builds a scoped schema diff limited to the bundle's own tables
+  so it never generates `DROP` statements for tables it does not own.
+- **DBAL middleware not applied.** `MaaTenantExtension::prepend()` was injecting
+  `connections.<name>.middlewares: [...]` into the Doctrine config, but DoctrineBundle has no
+  such config node — the option was silently ignored. The middleware is now tagged with
+  `doctrine.middleware` (connection-scoped) directly in `load()`, which is the correct
+  DoctrineBundle API.
+
+## [1.0.0] - 2026-04-22
+
 ### Added
 - `TenantConnectionMiddleware` / `TenantDriver` — transparent DBAL-level database switching
 - `SubdomainTenantResolver` — resolves tenant from subdomain (default)
 - `HeaderTenantResolver` — resolves tenant from `X-Tenant-Code` header (opt-in)
+- `QueryParamTenantResolver` — resolves tenant from `?_tenant=` query parameter (opt-in, dev)
 - `ChainTenantResolver` — priority-ordered chain of HTTP resolvers
 - `TenantResolverInterface` — contract for custom resolvers
 - `TenantContext` / `TenantContextInterface` — holds the current tenant for the request lifecycle

@@ -39,6 +39,26 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/placeholder
 > `DATABASE_URL` peut pointer vers n'importe quelle base : le middleware DBAL remplace
 > automatiquement `dbname` par celui du tenant résolu avant l'ouverture de la connexion.
 
+### Configuration Doctrine obligatoire
+
+Le bundle injecte un `maa_tenant` entity manager via `prepend()`. DoctrineBundle prend
+le **premier EM déclaré comme défaut** — il faut donc forcer `default_entity_manager: default`
+et utiliser le format `connections:` explicite pour que le middleware se fusionne correctement :
+
+```yaml
+# config/packages/doctrine.yaml
+doctrine:
+    dbal:
+        default_connection: default
+        connections:
+            default:
+                url: '%env(resolve:DATABASE_URL)%'
+                # autres options (schema_filter, etc.)
+    orm:
+        default_entity_manager: default   # obligatoire — évite que maa_tenant devienne le défaut
+        # ... reste de la config ORM
+```
+
 ---
 
 ## Initialisation du registre
@@ -70,6 +90,22 @@ bin/console maa:tenant:delete --code=acme
 ### HTTP — sous-domaine (par défaut)
 
 `acme.example.com` → code `acme` → base `tenant_acme`.
+
+### HTTP — query parameter (dev local, automatique)
+
+Lorsque `APP_ENV=dev`, le bundle enregistre automatiquement `SessionQueryParamTenantResolver`.
+Passez `?_tenant=acme` une seule fois — le tenant est stocké en session et toutes les
+requêtes suivantes fonctionnent sans le paramètre. `?_tenant=other` permet de switcher.
+
+```
+http://localhost:8000/login?_tenant=acme      # stocke en session → acme
+http://localhost:8000/dashboard               # toujours acme (depuis la session)
+http://localhost:8000/dashboard?_tenant=beta  # switch session → beta
+```
+
+Complètement absent en production (`APP_ENV != dev`).
+
+---
 
 ### HTTP — header personnalisé (opt-in)
 

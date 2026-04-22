@@ -32,7 +32,7 @@ maa_tenant:
     tenant_connection: default       # Doctrine connection to intercept
     tenant_db_prefix: 'tenant_'     # database name = prefix + tenant code
     http:
-        required: true              # 404 when no tenant is resolved on HTTP
+        required: true              # throw TenantNotResolvedException when no tenant resolved
     cli:
         tenant_commands:
             - 'doctrine:migrations:migrate'
@@ -46,6 +46,27 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/placeholder
 
 > `DATABASE_URL` can point to any database — the DBAL middleware replaces `dbname`
 > with the resolved tenant's database before the connection is opened.
+
+### Required: Doctrine configuration
+
+The bundle injects a `maa_tenant` entity manager via `prepend()`. Because DoctrineBundle
+uses the **first declared entity manager as default**, you must declare
+`default_entity_manager: default` explicitly, and use the `connections:` map format
+so the bundle's middleware merges cleanly:
+
+```yaml
+# config/packages/doctrine.yaml
+doctrine:
+    dbal:
+        default_connection: default
+        connections:
+            default:
+                url: '%env(resolve:DATABASE_URL)%'
+                # any other options (schema_filter, etc.)
+    orm:
+        default_entity_manager: default   # required — prevents maa_tenant EM from becoming the default
+        # ... rest of your ORM config
+```
 
 ## Setup
 
@@ -86,27 +107,19 @@ Maa\TenantBundle\Resolver\Http\HeaderTenantResolver:
 
 `X-Tenant-Code: acme` → code `acme`
 
-### HTTP — query parameter (local dev, opt-in)
+### HTTP — query parameter (local dev, automatic)
 
-For fullstack Symfony apps in local development where subdomains are not available,
-enable `QueryParamTenantResolver` only in the `dev` environment:
-
-```yaml
-# config/services_dev.yaml
-Maa\TenantBundle\Resolver\Http\QueryParamTenantResolver:
-    tags:
-        - { name: maa_tenant.http_resolver, priority: 20 }
-```
-
-You can then navigate directly to any page with `?_tenant=acme` in the URL:
+When `APP_ENV=dev`, the bundle automatically registers `SessionQueryParamTenantResolver`.
+Pass `?_tenant=acme` once — the tenant is stored in the session and all subsequent
+requests work without the parameter. Pass `?_tenant=other` to switch.
 
 ```
-http://localhost:8000/dashboard?_tenant=acme
-http://localhost:8000/invoices?_tenant=beta
+http://localhost:8000/login?_tenant=acme      # sets session → acme
+http://localhost:8000/dashboard               # still acme (from session)
+http://localhost:8000/dashboard?_tenant=beta  # switches session → beta
 ```
 
-The query parameter takes priority over the subdomain in dev, and is completely
-absent in production (never registered as a resolver).
+The resolver is completely absent in production (`APP_ENV != dev`).
 
 ### HTTP — custom resolver
 

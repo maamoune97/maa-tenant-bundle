@@ -28,6 +28,10 @@ final class MaaTenantExtension extends Extension implements PrependExtensionInte
         $container->setParameter('maa_tenant.tenant_db_prefix', $config['tenant_db_prefix']);
         $container->setParameter('maa_tenant.http.required', $config['http']['required']);
         $container->setParameter('maa_tenant.cli.tenant_commands', $config['cli']['tenant_commands']);
+
+        // Tag the middleware for the correct connection using DoctrineBundle's tag-based system.
+        $container->getDefinition('maa_tenant.dbal.middleware')
+            ->addTag('doctrine.middleware', ['connection' => $config['tenant_connection']]);
     }
 
     public function prepend(ContainerBuilder $container): void
@@ -67,18 +71,6 @@ final class MaaTenantExtension extends Extension implements PrependExtensionInte
             ],
         ]);
 
-        // 2. Attach the per-tenant DBAL middleware to the app's tenant connection.
-        //    Prepended separately so it merges cleanly even when the app uses the
-        //    single-connection shorthand (url:) rather than the connections: map.
-        $container->prependExtensionConfig('doctrine', [
-            'dbal' => [
-                'connections' => [
-                    $config['tenant_connection'] => [
-                        'middlewares' => ['maa_tenant.dbal.middleware'],
-                    ],
-                ],
-            ],
-        ]);
     }
 
     public function getAlias(): string

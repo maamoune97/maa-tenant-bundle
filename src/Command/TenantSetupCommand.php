@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Maa\TenantBundle\Command;
 
+use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Maa\TenantBundle\Entity\Tenant;
@@ -35,9 +36,32 @@ final class TenantSetupCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $force = (bool) $input->getOption('force');
 
+        $conn = $this->registryEm->getConnection();
+        $platform = $conn->getDatabasePlatform();
+        $schemaManager = $conn->createSchemaManager();
+
+        // Build the target schema from the Tenant entity only.
         $tool = new SchemaTool($this->registryEm);
         $classes = [$this->registryEm->getClassMetadata(Tenant::class)];
-        $sqls = $tool->getUpdateSchemaSql($classes, true);
+        $targetSchema = $tool->getSchemaFromMetadata($classes);
+
+        // Build the current schema scoped to only the tables we own,
+        // so the comparator never generates DROP statements for foreign tables.
+        $introspected = $schemaManager->introspectSchema();
+        $ownedTableNames = array_map(
+            static fn ($t) => $t->getName(),
+            $targetSchema->getTables()
+        );
+        $currentSchema = new \Doctrine\DBAL\Schema\Schema(
+            array_filter(
+                $introspected->getTables(),
+                static fn ($t) => in_array($t->getName(), $ownedTableNames, true)
+            )
+        );
+
+        $comparator = new Comparator($platform);
+        $diff = $comparator->compareSchemas($currentSchema, $targetSchema);
+        $sqls = $platform->getAlterSchemaSQL($diff);
 
         if (empty($sqls)) {
             $io->success('Registry schema is already up to date.');
@@ -51,7 +75,10 @@ final class TenantSetupCommand extends Command
             return Command::SUCCESS;
         }
 
-        $tool->updateSchema($classes, true);
+        foreach ($sqls as $sql) {
+            $conn->executeStatement($sql);
+        }
+
         $io->success('Registry schema updated.');
 
         return Command::SUCCESS;
