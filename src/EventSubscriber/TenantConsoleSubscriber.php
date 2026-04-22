@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Maa\TenantBundle\EventSubscriber;
 
+use Doctrine\DBAL\Connection;
 use Maa\TenantBundle\Context\TenantContextInterface;
 use Maa\TenantBundle\Exception\TenantNotFoundException;
 use Maa\TenantBundle\Repository\TenantRepository;
@@ -22,6 +23,13 @@ use Symfony\Component\Console\ConsoleEvents;
  * declared. ConsoleEvents::COMMAND fires after that binding attempt but BEFORE Command::run()
  * calls $input->validate(). We add the option to the definition here and rebind, which
  * re-parses the original ArgvInput tokens with the now-complete definition.
+ *
+ * Why we close the connection
+ * ───────────────────────────
+ * The DBAL middleware rewrites dbname only when DBAL opens a new connection. If the default
+ * connection was already opened (e.g. by an earlier listener), it points to the default DB
+ * and the middleware never fires again. Closing it here forces a reconnect on the first query
+ * the command issues, at which point the TenantContext is already set.
  */
 final class TenantConsoleSubscriber implements EventSubscriberInterface
 {
@@ -31,6 +39,7 @@ final class TenantConsoleSubscriber implements EventSubscriberInterface
     public function __construct(
         private readonly TenantContextInterface $context,
         private readonly TenantRepository $repository,
+        private readonly Connection $defaultConnection,
         private readonly array $tenantCommands,
     ) {}
 
@@ -72,5 +81,10 @@ final class TenantConsoleSubscriber implements EventSubscriberInterface
         }
 
         $this->context->setTenant($tenant);
+
+        // Force DBAL to reconnect so the middleware routes to the tenant DB on the next query.
+        // Without this, a connection already open to the default DB (e.g. from an earlier
+        // listener or a lazy-open triggered during kernel boot) would be reused as-is.
+        $this->defaultConnection->close();
     }
 }

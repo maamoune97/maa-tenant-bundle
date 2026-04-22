@@ -22,6 +22,7 @@ final class TenantDeleteCommand extends Command
     public function __construct(
         private readonly EntityManagerInterface $registryEm,
         private readonly TenantRepository $tenantRepository,
+        private readonly string $dbPrefix,
     ) {
         parent::__construct();
     }
@@ -57,7 +58,7 @@ final class TenantDeleteCommand extends Command
         $this->registryEm->flush();
 
         $io->success(sprintf('Tenant "%s" has been soft-deleted.', $code));
-        $io->note(sprintf('The database "%s" still exists. Drop it manually if no longer needed.', $tenant->getDatabaseName()));
+        $io->note(sprintf('The database "%s" still exists. Drop it manually if no longer needed.', $tenant->getDatabaseName($this->dbPrefix)));
 
         return Command::SUCCESS;
     }

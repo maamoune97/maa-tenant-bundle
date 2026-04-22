@@ -27,8 +27,9 @@ services:
     Maa\TenantBundle\Resolver\Http\HeaderTenantResolver: ~
 
     # Not tagged by default; intended for local dev (fullstack apps without subdomains).
-    # Opt in via config/services_dev.yaml (see README).
+    # Auto-loaded in dev via services_dev.yaml.
     Maa\TenantBundle\Resolver\Http\QueryParamTenantResolver: ~
+    Maa\TenantBundle\Resolver\Http\SessionQueryParamTenantResolver: ~
 
     # ── DBAL middleware ───────────────────────────────────────────────────────
     maa_tenant.dbal.middleware:
@@ -56,9 +57,10 @@ services:
 
     Maa\TenantBundle\EventSubscriber\TenantConsoleSubscriber:
         arguments:
-            $context:        '@Maa\TenantBundle\Context\TenantContextInterface'
-            $repository:     '@Maa\TenantBundle\Repository\TenantRepository'
-            $tenantCommands: '%maa_tenant.cli.tenant_commands%'
+            $context:           '@Maa\TenantBundle\Context\TenantContextInterface'
+            $repository:        '@Maa\TenantBundle\Repository\TenantRepository'
+            $defaultConnection: '@doctrine.dbal.default_connection'
+            $tenantCommands:    '%maa_tenant.cli.tenant_commands%'
         tags:
             - { name: kernel.event_subscriber }
 
@@ -71,10 +73,12 @@ services:
 
     Maa\TenantBundle\Command\TenantCreateCommand:
         arguments:
-            $registryEm:        '@doctrine.orm.maa_tenant_entity_manager'
-            $tenantRepository:  '@Maa\TenantBundle\Repository\TenantRepository'
+            $registryEm:         '@doctrine.orm.maa_tenant_entity_manager'
+            $tenantRepository:   '@Maa\TenantBundle\Repository\TenantRepository'
             $registryConnection: '@doctrine.dbal.maa_tenant_registry_connection'
-            $dbPrefix:          '%maa_tenant.tenant_db_prefix%'
+            $tenantContext:      '@Maa\TenantBundle\Context\TenantContextInterface'
+            $defaultConnection:  '@doctrine.dbal.default_connection'
+            $dbPrefix:           '%maa_tenant.tenant_db_prefix%'
         tags:
             - { name: console.command }
 
@@ -82,5 +86,14 @@ services:
         arguments:
             $registryEm:       '@doctrine.orm.maa_tenant_entity_manager'
             $tenantRepository: '@Maa\TenantBundle\Repository\TenantRepository'
+            $dbPrefix:         '%maa_tenant.tenant_db_prefix%'
+        tags:
+            - { name: console.command }
+
+    Maa\TenantBundle\Command\TenantForeachCommand:
+        arguments:
+            $tenantRepository:  '@Maa\TenantBundle\Repository\TenantRepository'
+            $tenantContext:     '@Maa\TenantBundle\Context\TenantContextInterface'
+            $defaultConnection: '@doctrine.dbal.default_connection'
         tags:
             - { name: console.command }

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-04-22
+
+### Added
+- `maa:tenant:foreach` command — runs any console command for every active tenant in sequence.
+  Supports `--tenants=a,b` (include filter), `--exclude=x` (skip filter), and
+  `--continue-on-error` (`-c`). Each tenant gets a fresh DBAL connection before its run.
+- `maa:tenant:create --migrate` option — automatically runs `doctrine:migrations:migrate`
+  after provisioning the new database, routing the connection to the correct tenant DB.
+
+### Fixed
+- **`TenantNotFoundException` returned HTTP 500.** Changed to extend `NotFoundHttpException`
+  so Symfony maps it to a 404, consistent with `TenantNotResolvedException`.
+- **CLI commands routed to wrong database.** `TenantConsoleSubscriber` now closes the default
+  DBAL connection after setting the tenant context, forcing DBAL to reconnect via the
+  middleware on the command's first query. Without this, a connection already open (pointing
+  to the default DB) was reused and migrations/queries ran against the wrong database.
+- **`maa:tenant:delete` note showed wrong database name.** `getDatabaseName()` was called
+  without the configured prefix, defaulting to `tenant_` instead of the app-configured value.
+
 ## [1.1.0] - 2026-04-22
 
 ### Added
