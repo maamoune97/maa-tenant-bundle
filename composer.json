@@ -1,5 +1,5 @@
 {
-    "name": "maa/tenant-bundle",
+    "name": "maamoune97/maa-tenant-bundle",
     "description": "Symfony bundle for transparent multi-tenancy with per-tenant databases",
     "type": "symfony-bundle",
     "license": "MIT",

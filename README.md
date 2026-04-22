@@ -14,7 +14,7 @@ Each tenant gets its own PostgreSQL database. Resolution happens at the DBAL lev
 ## Installation
 
 ```bash
-composer require maamoune97/tenant-bundle
+composer require maamoune97/maa-tenant-bundle
 ```
 
 Register the bundle in `config/bundles.php`:

@@ -3,7 +3,7 @@
 ## Installation
 
 ```bash
-composer require maa/tenant-bundle
+composer require maamoune97/maa-tenant-bundle
 ```
 
 Enregistrer le bundle dans `config/bundles.php` :
