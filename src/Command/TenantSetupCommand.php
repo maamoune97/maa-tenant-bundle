@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Maa\TenantBundle\Command;
 
+use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
@@ -37,6 +38,9 @@ final class TenantSetupCommand extends Command
         $force = (bool) $input->getOption('force');
 
         $conn = $this->registryEm->getConnection();
+
+        $this->createDatabaseIfNotExists($conn, $io);
+
         $platform = $conn->getDatabasePlatform();
         $schemaManager = $conn->createSchemaManager();
 
@@ -82,5 +86,35 @@ final class TenantSetupCommand extends Command
         $io->success('Registry schema updated.');
 
         return Command::SUCCESS;
+    }
+
+    private function createDatabaseIfNotExists(\Doctrine\DBAL\Connection $conn, SymfonyStyle $io): void
+    {
+        $params = $conn->getParams();
+        $dbName = $params['dbname'] ?? null;
+
+        if (!$dbName) {
+            return;
+        }
+
+        $adminParams = $params;
+        unset($adminParams['url'], $adminParams['dbname']);
+        $adminParams['dbname'] = 'postgres';
+
+        $adminConn = DriverManager::getConnection($adminParams);
+
+        try {
+            $exists = (bool) $adminConn->fetchOne(
+                'SELECT 1 FROM pg_database WHERE datname = :name',
+                ['name' => $dbName]
+            );
+
+            if (!$exists) {
+                $adminConn->executeStatement('CREATE DATABASE ' . $adminConn->quoteIdentifier($dbName));
+                $io->success("Database \"$dbName\" created.");
+            }
+        } finally {
+            $adminConn->close();
+        }
     }
 }

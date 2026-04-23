@@ -11,8 +11,8 @@
         }
     ],
     "support": {
-        "issues": "https://github.com/maamoune97/tenant-bundle/issues",
-        "source": "https://github.com/maamoune97/tenant-bundle"
+        "issues": "https://github.com/maamoune97/maa-tenant-bundle/issues",
+        "source": "https://github.com/maamoune97/maa-tenant-bundle"
     },
     "require": {
         "php": ">=8.2",
@@ -43,8 +43,8 @@
     },
     "extra": {
         "thanks": {
-            "name": "maa/tenant-bundle",
-            "url": "https://github.com/maa/tenant-bundle"
+            "name": "maamoune97/maa-tenant-bundle",
+            "url": "https://github.com/maamoune97/maa-tenant-bundle"
         }
     }
 }
