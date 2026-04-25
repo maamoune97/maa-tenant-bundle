@@ -79,6 +79,7 @@ services:
             $tenantContext:      '@Maa\TenantBundle\Context\TenantContextInterface'
             $defaultConnection:  '@doctrine.dbal.default_connection'
             $dbPrefix:           '%maa_tenant.tenant_db_prefix%'
+            $eventDispatcher:    '@event_dispatcher'
         tags:
             - { name: console.command }
 
@@ -87,6 +88,7 @@ services:
             $registryEm:       '@doctrine.orm.maa_tenant_entity_manager'
             $tenantRepository: '@Maa\TenantBundle\Repository\TenantRepository'
             $dbPrefix:         '%maa_tenant.tenant_db_prefix%'
+            $eventDispatcher:  '@event_dispatcher'
         tags:
             - { name: console.command }
 

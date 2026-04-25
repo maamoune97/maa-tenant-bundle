@@ -8,6 +8,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Maa\TenantBundle\Context\TenantContextInterface;
 use Maa\TenantBundle\Entity\Tenant;
+use Maa\TenantBundle\Event\TenantCreatedEvent;
 use Maa\TenantBundle\Repository\TenantRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -17,6 +18,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 #[AsCommand(
     name: 'maa:tenant:create',
@@ -31,6 +33,7 @@ final class TenantCreateCommand extends Command
         private readonly TenantContextInterface $tenantContext,
         private readonly Connection $defaultConnection,
         private readonly string $dbPrefix,
+        private readonly EventDispatcherInterface $eventDispatcher,
     ) {
         parent::__construct();
     }
@@ -69,11 +72,15 @@ final class TenantCreateCommand extends Command
 
         $io->success(sprintf('Tenant "%s" (%s) registered with id %s.', $code, $name, $tenant->getId()));
 
+        $databaseCreated = false;
         if (!$input->getOption('skip-db')) {
             $dbName = $tenant->getDatabaseName($this->dbPrefix);
             $this->createDatabase($dbName);
             $io->success(sprintf('Database "%s" created.', $dbName));
+            $databaseCreated = true;
         }
+
+        $this->eventDispatcher->dispatch(new TenantCreatedEvent($tenant, $tenant->getDatabaseName($this->dbPrefix), $databaseCreated));
 
         if ($input->getOption('migrate')) {
             if ($input->getOption('skip-db')) {
